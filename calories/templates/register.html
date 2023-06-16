@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+{% block body %}
+
+<div class="container">
+    <div class="row container z-depth-1" style="margin-top: 20px; padding-bottom: 20px;">
+        <form class="col s12" action="{% url 'register' %}" method="post">
+            {% csrf_token %}
+            <div class="container">
+                <h3>Register</h3>
+                {% if message %}
+                <div class="red-text">{{ message }}</div>
+                {% endif %}
+                <div class="form-group m-3">
+                    <input class="form-control" autofocus type="text" name="username" placeholder="Username">
+                </div>
+                <div class="form-group">
+                    <input class="form-control" type="email" name="email" placeholder="Email Address">
+                </div>
+                <div class="form-group">
+                    <input class="form-control" type="password" name="password" placeholder="Password">
+                </div>
+                <div class="form-group">
+                    <input class="form-control" type="password" name="confirmation" placeholder="Confirm Password">
+                </div>
+                <input class="btn deep-purple accent-3" type="submit" value="Register">
+                Already have an account? <a href="{% url 'login' %}">Log In here.</a>
+        </form>
+    </div>
+</div>
+
+
+{% endblock %}

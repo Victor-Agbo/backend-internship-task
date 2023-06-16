@@ -2,17 +2,45 @@
 
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <title>{% block title %}Mail{% endblock %}</title>
-        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
-        <link rel="stylesheet" href="{% static 'mail/styles.css' %}">
-        {% block script %}
-        {% endblock %}
-    </head>
-    <body>
+
+<head>
+    <title>{% block title %}Dive Calories{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <link rel="stylesheet" href="{% static 'calories/styles.css' %}">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <script src="{% static 'calories/min.jquery.js' %}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script src="{% static 'calories/calories.js' %}"></script>
+</head>
+
+<body>
+    <nav class="indigo darken-4 z-depth-0">
         <div class="container">
-            {% block body %}
-            {% endblock %}
+            <div class="nav-wrapper">
+                <a href="/" class="brand-logo">Dive Calories</a>
+                <ul id="nav-mobile" class="right white-text">
+                    <li><a class="dropdown-trigger" href="#!" data-target="dropdown1"><i
+                                class="material-icons right">account_box</i></a>
+                    </li>
+                    <ul id="dropdown1" class="dropdown-content indigo-text text-darken-4">
+
+                        {% if user.is_authenticated %}
+                        <li><a class="indigo-text darken-4" href="{% url 'logout' %}">Logout</a></li>
+                        {% else %}
+                        <li><a href="{% url 'register' %}">Register</a></li>
+                        <li><a href="{% url 'login' %}">Login</a></li>
+
+                        {% endif %}
+                    </ul>
+                </ul>
+            </div>
         </div>
-    </body>
+    </nav>
+    {% block body %}
+    {% endblock %}
+
+</body>
+
 </html>

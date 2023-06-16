@@ -1,0 +1,34 @@
+{% extends "layout.html" %}
+
+{% block body %}
+<div class="container">
+    <div class="row container z-depth-1" style="margin-top: 20px; padding-bottom: 20px;">
+        <form class="col s12" action="{% url 'login' %}" method="post">
+            {% csrf_token %}
+            <div class="container">
+                <h3>Login</h3>
+                {% if message %}
+                <div class="red-text">{{ message }}</div>
+                {% endif %}
+                <div class="row">
+                    <div class="input-field col s12">
+                        <input id="email" name="email" type="text" class="validate">
+                        <label for="email">Email</label>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="input-field col s12">
+                        <input id="password" name="password" type="password" class="validate">
+                        <label for="password">Password</label>
+                    </div>
+                </div>
+                <input class="btn deep-purple accent-3" type="submit" value="Login">
+                Don't have an account? <a href="{% url 'register' %}">Register here.</a>
+            </div>
+            
+        </form>
+
+    </div>
+</div>
+{% endblock body %}
