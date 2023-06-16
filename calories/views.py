@@ -16,20 +16,36 @@ def index(request):
 
 def login_view(request):
     if request.method == "POST":
-        pass
+        username = request.POST.get("username", "")
+        password = request.POST.get("password", "")
+
+        user = authenticate(request, username=username, password=password)
+        # Check if authentication successful
+        if user is not None:
+            login(request, user)
+            return HttpResponseRedirect(reverse("index"))
+        else:
+            return render(
+                request,
+                "store/login.html",
+                {"message": "Invalid username and/or password."},
+            )
     else:
         return render(request, "login.html")
+
 
 @login_required
 def logout_view(request):
     logout(request)
     return HttpResponseRedirect(reverse("index"))
 
+
 def register_view(request):
     if request.method == "POST":
         pass
     else:
         return render(request, "register.html")
+
 
 def register_view(request):
     if request.method == "POST":
