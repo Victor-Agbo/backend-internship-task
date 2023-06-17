@@ -2,9 +2,11 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
 from django.urls import reverse
 from . import models
+from django.views.decorators.csrf import csrf_exempt
+import json
 
 # Create your views here.
 
@@ -72,3 +74,18 @@ def register_view(request):
         return HttpResponseRedirect(reverse("index"))
     else:
         return render(request, "register.html")
+
+
+@csrf_exempt
+@login_required
+def set_calories(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "POST request required."}, status=400)
+
+    data = json.loads(request.body)
+
+    user = models.User.objects.get(username=request.user)
+    new_calories = data.get("new_calories")
+    user.per_day = new_calories
+    user.save()
+    return JsonResponse({"message": "Calories updated successfully..."}, status=201)

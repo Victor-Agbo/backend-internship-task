@@ -24,9 +24,10 @@
                     <li><a class="dropdown-trigger" href="#!" data-target="dropdown1"><i
                                 class="material-icons right">account_box</i></a>
                     </li>
-                    <ul id="dropdown1" class="dropdown-content indigo-text text-darken-4">
+                    <ul id="dropdown1" class="dropdown-content">
 
                         {% if user.is_authenticated %}
+                        <li id="set_calories_li"><a class="indigo-text darken-4" href="#!">Set Calories</a></li>
                         <li><a class="indigo-text darken-4" href="{% url 'logout' %}">Logout</a></li>
                         {% else %}
                         <li><a href="{% url 'register' %}">Register</a></li>

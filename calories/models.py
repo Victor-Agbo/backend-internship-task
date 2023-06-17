@@ -8,6 +8,8 @@ class User(AbstractUser):
     def __str__(self) -> str:
         return self.username
 
+    per_day = models.DecimalField(max_digits=16, decimal_places=2, default=0)
+
 
 class Entry(models.Model):
     class Meta:

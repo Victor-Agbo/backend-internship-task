@@ -1,4 +1,21 @@
 {% extends "layout.html" %}
 {% block body %}
-<h3>It worked!</h3>
+<div class="container">
+    <div id="message_div" style="display: none;">
+        <b id="message"></b>
+    </div>
+    <h3>It worked!</h3>
+
+    <div id="form-overlay"></div>
+
+    <div id="form_set_calories">
+        <form id="set_calories_form" method="post">
+            {% csrf_token %}
+            <input type="number" id="new_calories" name="new_calories" placeholder="Set Calories"
+                value="{{ user.per_day}}">
+            <button class="btn deep-purple accent-3" id="new_calories_submit" type="">Submit</button>
+        </form>
+
+    </div>
+</div>
 {% endblock %}
