@@ -7,6 +7,10 @@ from django.urls import reverse
 from . import models
 from django.views.decorators.csrf import csrf_exempt
 import json
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
 
 # Create your views here.
 
@@ -76,16 +80,34 @@ def register_view(request):
         return render(request, "register.html")
 
 
-@csrf_exempt
-@login_required
-def set_calories(request):
-    if request.method != "POST":
-        return JsonResponse({"error": "POST request required."}, status=400)
+# @csrf_exempt
+# @login_required
+# def set_calories(request):
+#     if request.method != "POST":
+#         return JsonResponse({"error": "POST request required."}, status=400)
 
-    data = json.loads(request.body)
+#     data = json.loads(request.body)
 
-    user = models.User.objects.get(username=request.user)
-    new_calories = data.get("new_calories")
-    user.per_day = new_calories
-    user.save()
-    return JsonResponse({"message": "Calories updated successfully..."}, status=201)
+#     user = models.User.objects.get(username=request.user)
+#     new_calories = data.get("new_calories")
+#     user.per_day = new_calories
+#     user.save()
+#     return JsonResponse({"message": "Calories updated successfully..."}, status=201)
+
+
+class set_calories(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        # Handle POST request
+        data = json.loads(request.body)
+        print(data)
+
+        user = models.User.objects.get(username=request.user)
+        new_calories = data.get("new_calories")
+        user.per_day = new_calories
+        user.save()
+
+        resp = {"message": "Calories updated successfully..."}
+        return Response(resp)

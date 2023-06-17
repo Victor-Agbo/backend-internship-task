@@ -29,6 +29,7 @@
                         {% if user.is_authenticated %}
                         <li id="set_calories_li"><a class="indigo-text darken-4" href="#!">Set Calories</a></li>
                         <li><a class="indigo-text darken-4" href="{% url 'logout' %}">Logout</a></li>
+                        <input type="hidden" id="auth_token" value="{{ user.auth_token.key }}">
                         {% else %}
                         <li><a href="{% url 'register' %}">Register</a></li>
                         <li><a href="{% url 'login' %}">Login</a></li>

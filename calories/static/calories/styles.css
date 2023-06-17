@@ -1,3 +1,14 @@
+#form-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9998;
+}
+
 #form_set_calories {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
     display: none;
@@ -8,15 +19,4 @@
     background: #fff;
     padding: 20px;
     z-index: 9999;
-}
-
-#form-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 9998;
 }

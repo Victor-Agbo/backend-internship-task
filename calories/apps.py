@@ -9,3 +9,9 @@ class CaloriesConfig(AppConfig):
         from .groups import create_groups
 
         create_groups()
+        from .models import User
+        from rest_framework.authtoken.models import Token
+
+        users = User.objects.all()
+        for user in users:
+            Token.objects.get_or_create(user=user)
