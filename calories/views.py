@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
+from django.core.paginator import Paginator
 
 # Create your views here.
 
@@ -22,14 +23,15 @@ class add_entry(APIView):
     def post(self, request):
         data = json.loads(request.body)
         print(data)
-
+        user = models.User.objects.get(username=request.user)
         if not data.get("add_meal_name"):
             return JsonResponse({"message": "Empty entry not allowed..."}, status=400)
 
         new_entry = models.Entry(
-            user=request.user,
+            user=user,
             name=data.get("add_meal_name"),
             number=data.get("add_cal_num"),
+            expected=int(data.get("add_cal_num")) < user.per_day,
         )
 
         new_entry.save()
@@ -42,19 +44,40 @@ class load_entries(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, sort_by):
+    def get(self, request):
+        sort_by = page_number = request.GET.get("sort_by")
         print(sort_by)
 
         if sort_by == "default":
             entries = models.Entry.objects.filter(user=request.user)
 
         # Return emails in reverse chronologial order
+        ret_entries = {}
         entries = entries.order_by("-timestamp").all()
-        return JsonResponse(
-            [entry.serialize() for entry in entries], safe=False, status=200
-        )
+        paginator = Paginator(entries, 10)
 
-        return JsonResponse({"hello": "hello"}, status=200)
+        page_number = request.GET.get("page")
+        print(page_number)
+        page_obj = paginator.get_page(page_number)
+
+        ret_entries["entries"] = [entry.serialize() for entry in page_obj.object_list]
+
+        pagination_data = {
+            "count": paginator.count,
+            "num_pages": paginator.num_pages,
+            "current_page": page_obj.number,
+            "has_previous": page_obj.has_previous(),
+            "has_next": page_obj.has_next(),
+        }
+
+        ret_entries["pagination"] = pagination_data
+
+        paginator_data = {
+            "page_range": list(paginator.page_range),
+            "per_page": paginator.per_page,
+        }
+        ret_entries["pagination"]["paginator"] = paginator_data
+        return JsonResponse(ret_entries, safe=False, status=200)
 
 
 @login_required

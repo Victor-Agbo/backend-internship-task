@@ -3,6 +3,7 @@
     border-radius: 4px;
     border-style: dashed;
     margin: 10px;
+    padding: 20px;
 }
 
 #form_add_entry {
@@ -38,4 +39,15 @@
     background: #fff;
     padding: 20px;
     z-index: 9999;
+}
+
+.remove_icon {
+    bottom: 10px;
+    right: 10px;
+    position: absolute;
+    z-index: 1
+}
+
+.remove_icon:hover {
+    cursor: pointer;
 }

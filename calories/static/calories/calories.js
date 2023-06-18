@@ -1,7 +1,11 @@
-function load_entries(sort_by, token) {
+function load_entries(sort_by, token, page) {
     $.ajax({
-        url: `/load_entries/${sort_by}`,  // Replace with the actual API endpoint URL
+        url: `/load_entries`,
         type: 'GET',
+        data: {
+            "sort_by": sort_by,
+            "page": page,
+        },
         contentType: "application/json",
         beforeSend: function (xhr) {
             xhr.setRequestHeader('Authorization', 'Token ' + token);
@@ -14,30 +18,71 @@ function load_entries(sort_by, token) {
 
             function renderData(data) {
                 var div_entries = $('#div_entries');
-
-                // Clear the mainDiv contents before rendering
                 div_entries.empty();
 
                 // Loop through the data and create divs for each item
-                for (var i = 0; i < data.length; i++) {
-                    var item = data[i];
+                for (var i = 0; i < data['entries'].length; i++) {
+                    var item = data['entries'][i];
 
                     // Create a div element for the item
                     var div = $('<div>').addClass('entry_item');
 
                     // Create and append the content to the div
-                    var inner_div = $('<div>').addClass('container');
                     var title = $('<h4>').text(item.name);
-
                     var cal = $('<b>').text(item.number + " cal");
                     var time = $('<p>').text(item.timestamp);
 
-                    inner_div.append(title, cal, time);
-                    div.append(inner_div)
-                    // Append the div to the mainDiv
+                    var icons_div = $('<div>').css({ "flex": "1", "position": "relative" })
+                    var remove_icon = $('<i>').text('delete_sweep').addClass("material-icons black-text remove_icon")
+
+                    icons_div.append(remove_icon)
+                    div.append(title, cal, time, icons_div);
+
                     div_entries.append(div);
                 }
+
+                const pagination = data['pagination']
+                var page_info = $('<ul>').addClass('pagination');
+
+                if (pagination.has_previous) {
+                    link = $('<a>').addClass("page-link").attr('href', "#").append($('<i>').text('chevron_left').addClass('material-icons')).click(function () {
+                        load_entries("default", token, pagination.current_page - 1)
+                    })
+                    var listItem = $('<li>').addClass('page-item').append(link);
+
+                    page_info.append(listItem);
+                }
+
+                pagination.paginator.page_range.forEach(function (page) {
+                    var link;
+                    if (page === pagination.current_page) {
+                        link = $('<a>').addClass('page-link').text(page).attr('href', '#').click(function () {
+                            load_entries("default", token, page);
+                        });
+                        var listItem = $('<li>').addClass('page-item active').append(link);
+                    } else {
+                        link = $('<a>').addClass('page-link').text(page).attr('href', '#').click(function () {
+                            load_entries("default", token, page);
+                        });
+                        var listItem = $('<li>').addClass('page-item').append(link);
+
+                    }
+                    page_info.append(listItem);
+                });
+
+                if (pagination.has_next) {
+                    var nextLink = $('<a>').addClass('page-link').attr('href', '#').append($('<i>').text('chevron_right').addClass('material-icons')).click(function () {
+                        load_entries("default", token, pagination.current_page + 1);
+                    });
+
+                    var nextListItem = $('<li>').addClass('page-item').append(nextLink);
+
+                    page_info.append(nextListItem);
+                }
+                $('#div_entries').append(page_info);
+
             }
+
 
         },
         error: function (xhr, textStatus, errorThrown) {
@@ -68,7 +113,7 @@ $(document).ready(function () {
         $('#form-overlay').fadeIn();
     });
     var token = $('#auth_token').val();
-    load_entries("default", token);
+    load_entries("default", token, 1);
 
 
     $('#new_calories_submit').click(function () {
