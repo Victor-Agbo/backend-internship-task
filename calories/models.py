@@ -16,6 +16,14 @@ class User(AbstractUser):
             models.UniqueConstraint(fields=["username"], name="unique_username")
         ]
 
+    def serialize(self):
+        return {
+            "id": self.id,
+            "username": self.username,
+            "email": self.email,
+            "per_day": self.per_day,
+        }
+
 
 class Entry(models.Model):
     class Meta:

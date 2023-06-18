@@ -1,7 +1,8 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
-from django.db import IntegrityError, transaction
+
+# from django.db import IntegrityError, transaction
 from django.http import HttpResponseRedirect, JsonResponse
 from django.urls import reverse
 from . import models
@@ -12,6 +13,7 @@ from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from django.core.paginator import Paginator
+from rest_framework.permissions import IsAuthenticated, BasePermission
 
 # Create your views here.
 
@@ -40,13 +42,48 @@ class add_entry(APIView):
         return Response(resp)
 
 
+class delete_entry(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request):
+        entry_id = request.data.get("entry_id")
+        print(entry_id)
+        to_delete = models.Entry.objects.get(id=entry_id)
+        if entry_id and to_delete:
+            to_delete.delete()
+            return Response({"message": "Delete successful"}, status=204)
+
+
+class edit_entry(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        data = json.loads(request.body)
+        print(data)
+        user = models.User.objects.get(username=request.user)
+        if not data.get("edit_meal_name"):
+            return JsonResponse({"message": "Empty entry not allowed..."}, status=400)
+
+        to_edit = models.Entry.objects.get(id=int(data.get("edit_id")))
+
+        to_edit.name = data.get("edit_meal_name")
+        to_edit.number = data.get("edit_cal_num")
+
+        to_edit.expected = float(data.get("edit_cal_num")) < user.per_day
+        to_edit.save()
+
+        resp = {"message": "Entry edited successfully..."}
+        return Response(resp)
+
+
 class load_entries(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         sort_by = page_number = request.GET.get("sort_by")
-        print(sort_by)
 
         if sort_by == "default":
             entries = models.Entry.objects.filter(user=request.user)
@@ -57,7 +94,6 @@ class load_entries(APIView):
         paginator = Paginator(entries, 10)
 
         page_number = request.GET.get("page")
-        print(page_number)
         page_obj = paginator.get_page(page_number)
 
         ret_entries["entries"] = [entry.serialize() for entry in page_obj.object_list]
@@ -80,8 +116,50 @@ class load_entries(APIView):
         return JsonResponse(ret_entries, safe=False, status=200)
 
 
+class CanAddUserPermission(BasePermission):
+    def has_permission(self, request, view):
+        # Check if the user has the 'can_add_user' permission on the model
+        return request.user.has_perm("calories.add_user")
+
+
+class load_users(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, CanAddUserPermission]
+
+    def get(self, request):
+        sort_by = page_number = request.GET.get("sort_by")
+
+        # Return emails in reverse chronologial order
+        ret_users = {}
+        users = models.User.objects.all()
+        paginator = Paginator(users, 10)
+
+        page_number = request.GET.get("page")
+        page_obj = paginator.get_page(page_number)
+
+        ret_users["users"] = [user.serialize() for user in page_obj.object_list]
+
+        pagination_data = {
+            "count": paginator.count,
+            "num_pages": paginator.num_pages,
+            "current_page": page_obj.number,
+            "has_previous": page_obj.has_previous(),
+            "has_next": page_obj.has_next(),
+        }
+
+        ret_users["pagination"] = pagination_data
+
+        paginator_data = {
+            "page_range": list(paginator.page_range),
+            "per_page": paginator.per_page,
+        }
+        ret_users["pagination"]["paginator"] = paginator_data
+        return JsonResponse(ret_users, safe=False, status=200)
+
+
 @login_required
 def index(request):
+    print(request.user.groups.all())
     return render(request, "index.html")
 
 

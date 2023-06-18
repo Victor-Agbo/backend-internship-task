@@ -35,6 +35,12 @@
                         <li><a href="{% url 'login' %}">Login</a></li>
 
                         {% endif %}
+                        {% if perms.calories.add_user %}
+                        <li id="crud_users_li"><a class="indigo-text darken-4" href="#!">CRUD Users</a></li>
+                        {% else %}
+                        <li id="set_calories_li"><a class="indigo-text darken-4" href="#!">Set Calories</a></li>
+
+                        {% endif %}
                     </ul>
                 </ul>
             </div>

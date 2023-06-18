@@ -34,6 +34,28 @@
         </form>
     </div>
 
+    <div id="form_edit_entry">
+        <form id="edit_entry_form" method="post">
+            {% csrf_token %}
+
+            <input type="hidden" id="edit_id" name="edit_id" required>
+            <input type="text" id="edit_meal_name" name="edit_meal_name" placeholder="Meal name" required>
+            <input type="number" id="edit_cal_num" name="edit_cal_num" placeholder="Calories">
+            <button class="btn deep-purple accent-3" type="" id="edit_entry">Edit!</button>
+        </form>
+    </div>
+
+    <div id="form_edit_user">
+        <form id="user_entry_form" method="post">
+            {% csrf_token %}
+
+            <input type="hidden" id="edit_user_id" name="edit_user_id" required>
+            <input type="email" id="edit_email" name="edit_email" placeholder="Email" required>
+            <input type="number" id="edit_per_day" name="edit_per_day" placeholder="Per day">
+            <button class="btn deep-purple accent-3" type="" id="edit_user">Edit!</button>
+        </form>
+    </div>
+
     <div id="div_entries"></div>
 </div>
 {% endblock %}

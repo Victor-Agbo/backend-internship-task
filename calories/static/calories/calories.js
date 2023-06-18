@@ -1,207 +1,383 @@
-function load_entries(sort_by, token, page) {
+$(document).ready(function () {
+    $(".dropdown-trigger").dropdown({ hover: false });
+
+    $('#set_calories_li').click(function () {
+        toggleForm('#form_set_calories');
+    });
+
+    $('#form-overlay').click(function () {
+        hideForms();
+    });
+
+    $('#add_entry_button').click(function () {
+        toggleForm('#form_add_entry');
+    });
+
+    const token = $('#auth_token').val();
+    loadEntries("default", token, 1);
+
+    $('#crud_users_li').click(function () {
+        loadUsers('default', token, 1)
+    })
+    $('#new_calories_submit').click(function () {
+        const data = {
+            new_calories: $('#new_calories').val()
+        };
+        sendAjaxRequest('/set_calories', 'POST', data, token);
+        hideForms();
+        return false;
+    });
+
+    $('#edit_entry').click(function () {
+        const data = {
+            edit_id: $('#edit_id').val(),
+            edit_meal_name: $('#edit_meal_name').val(),
+            edit_cal_num: $('#edit_cal_num').val()
+        };
+        sendAjaxRequest('/edit_entry', 'POST', data, token);
+        hideForms();
+        return false;
+    });
+
+    $('#submit_entry').click(function () {
+        const data = {
+            add_meal_name: $('#add_meal_name').val(),
+            add_cal_num: $('#add_cal_num').val()
+        };
+        sendAjaxRequest('/add_entry', 'POST', data, token);
+        hideForms();
+        $('#add_meal_name').val("");
+        $('#add_cal_num').val("");
+        return false;
+    });
+
+    $('#div_entries').on('click', '.edit_icon', function () {
+        const item_id = $(this).data("id");
+        const meal_name = $(this).parent().siblings('h4').text();
+        const cal_num = $(this).parent().siblings('b').text().replace(' cal', '');
+        $('#edit_id').val(item_id);
+        $('#edit_meal_name').val(meal_name);
+        $('#edit_cal_num').val(cal_num);
+        toggleForm('#form_edit_entry');
+    });
+
+    $('#div_entries').on('click', '.edit_user_icon', function () {
+        const user_id = $(this).data("id");
+        const email = $(this).parent().siblings('p').text();
+        const per_day = $(this).parent().siblings('b').text().replace(' cal', '');
+        $('#edit_user_id').val(user_id);
+        $('#edit_email').val(email);
+        $('#edit_per_day').val(per_day);
+        toggleForm('#form_edit_user');
+    });
+
+    $('#div_entries').on('click', '.remove_icon', function () {
+        const entryId = $(this).attr('data-id');
+        deleteEntry(entryId, token);
+    });
+    
+    $('#div_entries').on('click', '.remove_user_icon', function () {
+        const userId = $(this).attr('data-id');
+        deleteEntry(userId, token);
+    });
+});
+
+function toggleForm(formId) {
+    $(formId).fadeIn();
+    $('#form-overlay').fadeIn();
+}
+
+function hideForms() {
+    $('#form_set_calories').fadeOut();
+    $('#form_add_entry').fadeOut();
+    $('#form_edit_entry').fadeOut();
+    $('#form_edit_user').fadeOut();
+    $('#form-overlay').fadeOut();
+}
+
+function sendAjaxRequest(url, method, data, token) {
     $.ajax({
-        url: `/load_entries`,
-        type: 'GET',
-        data: {
-            "sort_by": sort_by,
-            "page": page,
+        url: url,
+        type: method,
+        data: JSON.stringify(data),
+        contentType: 'application/json',
+        beforeSend: function (xhr) {
+            xhr.setRequestHeader('Authorization', 'Token ' + token);
         },
-        contentType: "application/json",
+        success: function (response) {
+            handleSuccess(response);
+        },
+        error: function (xhr, textStatus, errorThrown) {
+            handleError(xhr, errorThrown);
+        }
+    });
+}
+
+function handleSuccess(response) {
+    $('#message').text(response['message']);
+    $('#message_div').fadeIn(1000).fadeOut(2000);
+    loadEntries('default', $('#auth_token').val(), $('li.active').find('a').text());
+}
+
+function handleError(xhr, errorThrown) {
+    let errorMessage = '';
+
+    if (xhr.status === 401) {
+        errorMessage = 'Authentication failed. Please check your token.';
+    } else {
+        errorMessage = errorThrown || 'An error occurred.';
+    }
+
+    $('#message').text(errorMessage);
+    $('#message_div').fadeIn(1000).fadeOut(2000);
+}
+
+function deleteEntry(id, token) {
+    console.log(id);
+    $.ajax({
+        url: `/delete_entry`,
+        type: 'DELETE',
+        dataType: 'json',
+        data: {
+            "entry_id": id
+        },
         beforeSend: function (xhr) {
             xhr.setRequestHeader('Authorization', 'Token ' + token);
         },
         success: function (data) {
-            // Handle successful response
-            console.log(data);
-
-            renderData(data);
-
-            function renderData(data) {
-                var div_entries = $('#div_entries');
-                div_entries.empty();
-
-                // Loop through the data and create divs for each item
-                for (var i = 0; i < data['entries'].length; i++) {
-                    var item = data['entries'][i];
-
-                    // Create a div element for the item
-                    var div = $('<div>').addClass('entry_item');
-
-                    // Create and append the content to the div
-                    var title = $('<h4>').text(item.name);
-                    var cal = $('<b>').text(item.number + " cal");
-                    var time = $('<p>').text(item.timestamp);
-
-                    var icons_div = $('<div>').css({ "flex": "1", "position": "relative" })
-                    var remove_icon = $('<i>').text('delete_sweep').addClass("material-icons black-text remove_icon")
-
-                    icons_div.append(remove_icon)
-                    div.append(title, cal, time, icons_div);
-
-                    div_entries.append(div);
-                }
-
-                const pagination = data['pagination']
-                var page_info = $('<ul>').addClass('pagination');
-
-                if (pagination.has_previous) {
-                    link = $('<a>').addClass("page-link").attr('href', "#").append($('<i>').text('chevron_left').addClass('material-icons')).click(function () {
-                        load_entries("default", token, pagination.current_page - 1)
-                    })
-                    var listItem = $('<li>').addClass('page-item').append(link);
-
-                    page_info.append(listItem);
-                }
-
-                pagination.paginator.page_range.forEach(function (page) {
-                    var link;
-                    if (page === pagination.current_page) {
-                        link = $('<a>').addClass('page-link').text(page).attr('href', '#').click(function () {
-                            load_entries("default", token, page);
-                        });
-                        var listItem = $('<li>').addClass('page-item active').append(link);
-                    } else {
-                        link = $('<a>').addClass('page-link').text(page).attr('href', '#').click(function () {
-                            load_entries("default", token, page);
-                        });
-                        var listItem = $('<li>').addClass('page-item').append(link);
-
-                    }
-                    page_info.append(listItem);
-                });
-
-                if (pagination.has_next) {
-                    var nextLink = $('<a>').addClass('page-link').attr('href', '#').append($('<i>').text('chevron_right').addClass('material-icons')).click(function () {
-                        load_entries("default", token, pagination.current_page + 1);
-                    });
-
-                    var nextListItem = $('<li>').addClass('page-item').append(nextLink);
-
-                    page_info.append(nextListItem);
-                }
-                $('#div_entries').append(page_info);
-
-            }
-
-
+            loadEntries('default', token, $('li.active').find('a').text());
         },
         error: function (xhr, textStatus, errorThrown) {
-            // Handle error response
             console.log(errorThrown);
         }
     });
 }
 
-$(document).ready(function () {
-    // Handler for .ready() called.
-    $(".dropdown-trigger").dropdown({ "hover": false });
-
-    $('#set_calories_li').click(function () {
-        $('#form_set_calories').fadeIn();
-        $('#form-overlay').fadeIn();
+function deleteEntry(id, token) {
+    console.log(id);
+    $.ajax({
+        url: `/delete_entry`,
+        type: 'DELETE',
+        dataType: 'json',
+        data: {
+            "entry_id": id
+        },
+        beforeSend: function (xhr) {
+            xhr.setRequestHeader('Authorization', 'Token ' + token);
+        },
+        success: function (data) {
+            loadEntries('default', token, $('li.active').find('a').text());
+        },
+        error: function (xhr, textStatus, errorThrown) {
+            console.log(errorThrown);
+        }
     });
+}
 
-    $('#form-overlay').click(function () {
-        $('#form_set_calories').fadeOut();
-        $('#form_add_entry').fadeOut();
-        $('#form-overlay').fadeOut();
+function renderData(data) {
+    const divEntries = $('#div_entries');
+    const token = $('#auth_token').val();
+    divEntries.empty();
 
-    });
+    for (let i = 0; i < data.entries.length; i++) {
+        const item = data.entries[i];
+        const div = $('<div>').addClass('entry_item');
+        const title = $('<h4>').text(item.name);
+        const cal = $('<b>').text(item.number + ' cal');
+        const time = $('<p>').text(item.timestamp);
+        const iconsDiv = $('<div>').css({ flex: '1', position: 'relative' });
+        const editIcon = $('<i>')
+            .text('edit')
+            .addClass('material-icons black-text right edit_icon').data("id", item.id);
+        const removeIcon = $('<i>')
+            .text('delete_sweep')
+            .addClass('material-icons black-text remove_icon')
+            .attr('data-id', item.id);
 
-    $('#add_entry_button').click(function () {
-        $('#form_add_entry').fadeIn();
-        $('#form-overlay').fadeIn();
-    });
-    var token = $('#auth_token').val();
-    load_entries("default", token, 1);
-
-
-    $('#new_calories_submit').click(function () {
-
-        var data = {
-            new_calories: $('#new_calories').val(),
-        };
-        console.log(data);
-
-        $.ajax({
-            url: '/set_calories',  // Replace with the actual API endpoint URL
-            type: 'POST',
-            data: JSON.stringify(data),
-            contentType: "application/json",
-            beforeSend: function (xhr) {
-                xhr.setRequestHeader('Authorization', 'Token ' + token);
-            },
-            success: function (response) {
-                // Handle successful response
-                console.log(response);
-                $('#message').text(response['message']);
-                $('#message_div').fadeIn(1000);
-                $('#message_div').fadeOut(2000);
-
-            },
-            error: function (xhr, textStatus, errorThrown) {
-                // Handle error response
-                if (xhr.status === 401) {
-                    console.log('Authentication failed. Please check your token.');
-                    $('#message').text('Authentication failed...');
-                    $('#message_div').fadeIn(1000);
-                    $('#message').fadeOut(2000)
-                } else {
-                    console.log('Error:', errorThrown);
-                    $('#message').text(errorThrown);
-                    $('#message_div').fadeIn(1000);
-                    $('#message_div').fadeOut(2000)
-                }
-            }
+        removeIcon.click(function () {
+            deleteEntry($(this).attr('data-id'), token);
         });
 
-        $('#form_set_calories').fadeOut();
-        $('#form-overlay').fadeOut();
-        return false;
-    });
+        iconsDiv.append(editIcon, removeIcon);
+        div.append(title, cal, time, iconsDiv);
+        divEntries.append(div);
+    }
 
-    $('#submit_entry').click(function () {
+    const pagination = data.pagination;
+    const page_info = $('<ul>').addClass('pagination');
 
-        var data = {
-            add_meal_name: $('#add_meal_name').val(),
-            add_cal_num: $('#add_cal_num').val(),
-        };
-        console.log(data);
+    if (pagination.has_previous) {
+        const link = $('<a>')
+            .addClass('page-link')
+            .attr('href', '#')
+            .append($('<i>').text('chevron_left').addClass('material-icons'));
 
-        $.ajax({
-            url: '/add_entry',  // Replace with the actual API endpoint URL
-            type: 'POST',
-            data: JSON.stringify(data),
-            contentType: "application/json",
-            beforeSend: function (xhr) {
-                xhr.setRequestHeader('Authorization', 'Token ' + token);
-            },
-            success: function (response) {
-                // Handle successful response
-                console.log(response);
-                $('#message').text(response['message']);
-                $('#message_div').fadeIn(1000);
-                $('#message_div').fadeOut(2000);
-            },
-            error: function (xhr, textStatus, errorThrown) {
-                // Handle error response
-                if (xhr.status === 401) {
-                    console.log('Authentication failed. Please check your token.');
-                    $('#message').text('Authentication failed...');
-                    $('#message_div').fadeIn(1000);
-                    $('#message_div').fadeOut(2000)
-                } else {
-                    console.log('Error:', errorThrown);
-                    var errorResponse = xhr.responseJSON;
-                    $('#message').text(errorResponse.message);
-                    $('#message_div').fadeIn(1000);
-                    $('#message_div').fadeOut(2000)
-                }
-            }
+        link.click(function () {
+            loadEntries('default', token, pagination.current_page - 1);
         });
 
-        $('#form_add_entry').fadeOut();
-        $('#form-overlay').fadeOut();
-        return false;
+        const listItem = $('<li>').addClass('page-item').append(link);
+        page_info.append(listItem);
+    }
+
+    pagination.paginator.page_range.forEach(function (page) {
+        let link;
+
+        if (page === pagination.current_page) {
+            link = $('<a>').addClass('page-link').text(page).attr('href', '#').click(function () {
+                loadEntries('default', token, page);
+            });
+
+            const listItem = $('<li>').addClass('page-item active').append(link);
+            page_info.append(listItem);
+        } else {
+            link = $('<a>').addClass('page-link').text(page).attr('href', '#').click(function () {
+                loadEntries('default', token, page);
+            });
+
+            const listItem = $('<li>').addClass('page-item').append(link);
+            page_info.append(listItem);
+        }
     });
-})
+
+    if (pagination.has_next) {
+        const nextLink = $('<a>')
+            .addClass('page-link')
+            .attr('href', '#')
+            .append($('<i>').text('chevron_right').addClass('material-icons'));
+
+        nextLink.click(function () {
+            loadEntries('default', token, pagination.current_page + 1);
+        });
+
+        const nextListItem = $('<li>').addClass('page-item').append(nextLink);
+        page_info.append(nextListItem);
+    }
+
+    $('#div_entries').append(page_info);
+}
+
+function renderUsers(data) {
+    const divEntries = $('#div_entries');
+    const token = $('#auth_token').val();
+    divEntries.empty();
+
+    for (let i = 0; i < data.users.length; i++) {
+        const user = data.users[i];
+        const div = $('<div>').addClass('entry_item');
+        const title = $('<h4>').text(user.username);
+        const cal = $('<b>').text(user.per_day + ' cal');
+        const email = $('<p>').text(user.email);
+        const iconsDiv = $('<div>').css({ flex: '1', position: 'relative' });
+        const editIcon = $('<i>')
+            .text('edit')
+            .addClass('material-icons black-text right edit_user_icon').data("id", user.id);
+        const removeIcon = $('<i>')
+            .text('delete_sweep')
+            .addClass('material-icons black-text remove_user_icon')
+            .attr('data-id', user.id);
+
+        removeIcon.click(function () {
+            deleteUser($(this).attr('data-id'), token);
+        });
+
+        iconsDiv.append(editIcon, removeIcon);
+        div.append(title, cal, email, iconsDiv);
+        divEntries.append(div);
+    }
+
+    const pagination = data.pagination;
+    const page_info = $('<ul>').addClass('pagination');
+
+    if (pagination.has_previous) {
+        const link = $('<a>')
+            .addClass('page-link')
+            .attr('href', '#')
+            .append($('<i>').text('chevron_left').addClass('material-icons'));
+
+        link.click(function () {
+            loadUsers('default', token, pagination.current_page - 1);
+        });
+
+        const listItem = $('<li>').addClass('page-item').append(link);
+        page_info.append(listItem);
+    }
+
+    pagination.paginator.page_range.forEach(function (page) {
+        let link;
+
+        if (page === pagination.current_page) {
+            link = $('<a>').addClass('page-link').text(page).attr('href', '#').click(function () {
+                loadUsers('default', token, page);
+            });
+
+            const listItem = $('<li>').addClass('page-item active').append(link);
+            page_info.append(listItem);
+        } else {
+            link = $('<a>').addClass('page-link').text(page).attr('href', '#').click(function () {
+                loadUsers('default', token, page);
+            });
+
+            const listItem = $('<li>').addClass('page-item').append(link);
+            page_info.append(listItem);
+        }
+    });
+
+    if (pagination.has_next) {
+        const nextLink = $('<a>')
+            .addClass('page-link')
+            .attr('href', '#')
+            .append($('<i>').text('chevron_right').addClass('material-icons'));
+
+        nextLink.click(function () {
+            loadUsers('default', token, pagination.current_page + 1);
+        });
+
+        const nextListItem = $('<li>').addClass('page-item').append(nextLink);
+        page_info.append(nextListItem);
+    }
+
+    $('#div_entries').append(page_info);
+}
+
+function loadEntries(sortBy, token, page) {
+    $.ajax({
+        url: '/load_entries',
+        type: 'GET',
+        data: {
+            sort_by: sortBy,
+            page: page
+        },
+        contentType: 'application/json',
+        beforeSend: function (xhr) {
+            xhr.setRequestHeader('Authorization', 'Token ' + token);
+        },
+        success: function (response) {
+            renderData(response);
+        },
+        error: function (xhr, textStatus, errorThrown) {
+            console.log(errorThrown);
+        }
+    });
+}
+
+function loadUsers(sortBy, token, page) {
+    $.ajax({
+        url: '/load_users',
+        type: 'GET',
+        data: {
+            sort_by: sortBy,
+            page: page
+        },
+        contentType: 'application/json',
+        beforeSend: function (xhr) {
+            xhr.setRequestHeader('Authorization', 'Token ' + token);
+        },
+        success: function (response) {
+            renderUsers(response);
+        },
+        error: function (xhr, textStatus, errorThrown) {
+            console.log(errorThrown);
+        }
+    });
+}

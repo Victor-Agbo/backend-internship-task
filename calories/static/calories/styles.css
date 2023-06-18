@@ -1,3 +1,12 @@
+.edit_icon,
+.edit_user_icon {
+    bottom: 10px;
+    right: 50px;
+    position: absolute;
+    z-index: 1
+}
+
+
 .entry_item {
     border: 3px;
     border-radius: 4px;
@@ -7,6 +16,19 @@
 }
 
 #form_add_entry {
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    padding: 20px;
+    z-index: 9999;
+}
+
+#form_edit_entry,
+#form_edit_user {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
     display: none;
     position: fixed;
@@ -41,13 +63,17 @@
     z-index: 9999;
 }
 
-.remove_icon {
+.remove_icon,
+.remove_user_icon {
     bottom: 10px;
     right: 10px;
     position: absolute;
     z-index: 1
 }
 
-.remove_icon:hover {
+.remove_icon:hover,
+.remove_user_icon:hover,
+.edit_icon:hover,
+.edit_user_icon:hover {
     cursor: pointer;
 }
