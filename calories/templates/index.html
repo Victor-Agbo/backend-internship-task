@@ -1,10 +1,16 @@
 {% extends "layout.html" %}
 {% block body %}
-<div class="container">
-    <div id="message_div" style="display: none;">
+<div class="container" style="position: relative;">
+    <div id="message_div" style="display: none; width: 100%;">
         <b id="message"></b>
     </div>
-    <h3>It worked!</h3>
+    <h3>Entries</h3>
+
+    <div style="position: absolute; top: 0px; right: 0px;">
+        <button class="waves-effect waves-light btn-large deep-purple accent-3" id="add_entry_button"><i
+                class="material-icons left">add</i>Add Entry</button>
+    </div>
+
 
     <div id="form-overlay"></div>
 
@@ -21,26 +27,13 @@
     <div id="form_add_entry">
         <form id="my-form" method="post">
             {% csrf_token %}
-            <!-- Add your form fields here -->
-            <div class="input-field">
-                <select name="add_product_category" id="add_product_category" class="browser-default">
-                    <option value="" disabled selected>Pick a category</option>
-                    {% for category in categories %}
-                    <option value="{{ category}}">{{ category}}</option>
-                    {% endfor %}
-                </select>
-            </div>
 
-            name = models.CharField(max_length=255)
-            number = models.DecimalField(max_digits=16, decimal_places=2)
-            timestamp = models.DateTimeField(auto_now_add=True)
-            expected = models.BooleanField(default=False)
-
-            <input type="text" name="add_meal_name" placeholder="Meal name">
-            <input type="number" name="add_cal_num" id="add_cal_num">
-            <input type="url" name="add_product_url" id="add_product_price" placeholder="Image Url">
-            <button class="btn cyan darken-3" type="submit">Submit</button>
+            <input type="text" id="add_meal_name" name="add_meal_name" placeholder="Meal name" required>
+            <input type="number" id="add_cal_num" name="add_cal_num" placeholder="Calories">
+            <button class="btn deep-purple accent-3" type="" id="submit_entry">Add!</button>
         </form>
     </div>
+
+    <div id="div_entries"></div>
 </div>
 {% endblock %}

@@ -4,5 +4,10 @@ from django.contrib import admin
 
 from . import models
 
-admin.site.register(models.Entry)
+
+class EntryAdmin(admin.ModelAdmin):
+    list_display = ("name", "user")
+
+
+admin.site.register(models.Entry, EntryAdmin)
 admin.site.register(models.User)

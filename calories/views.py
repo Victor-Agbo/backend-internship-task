@@ -1,7 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.http import HttpResponseRedirect, JsonResponse
 from django.urls import reverse
 from . import models
@@ -13,6 +13,48 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 
 # Create your views here.
+
+
+class add_entry(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        data = json.loads(request.body)
+        print(data)
+
+        if not data.get("add_meal_name"):
+            return JsonResponse({"message": "Empty entry not allowed..."}, status=400)
+
+        new_entry = models.Entry(
+            user=request.user,
+            name=data.get("add_meal_name"),
+            number=data.get("add_cal_num"),
+        )
+
+        new_entry.save()
+        print(new_entry.serialize())
+        resp = {"message": "Entry added successfully..."}
+        return Response(resp)
+
+
+class load_entries(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, sort_by):
+        print(sort_by)
+
+        if sort_by == "default":
+            entries = models.Entry.objects.filter(user=request.user)
+
+        # Return emails in reverse chronologial order
+        entries = entries.order_by("-timestamp").all()
+        return JsonResponse(
+            [entry.serialize() for entry in entries], safe=False, status=200
+        )
+
+        return JsonResponse({"hello": "hello"}, status=200)
 
 
 @login_required
@@ -33,17 +75,16 @@ def login_view(request):
         else:
             return render(
                 request,
-                "store/login.html",
+                "login.html",
                 {"message": "Invalid username and/or password."},
             )
     else:
         return render(request, "login.html")
 
 
-@login_required
 def logout_view(request):
     logout(request)
-    return HttpResponseRedirect(reverse("index"))
+    return HttpResponseRedirect(reverse("login"))
 
 
 def register_view(request):
@@ -67,32 +108,21 @@ def register_view(request):
             )
 
         # Attempt to create new user
-        try:
-            user = models.User.objects.create_user(username, email, password)
+
+        user, created = models.User.objects.get_or_create(
+            username=username, email=email
+        )
+        if created:
+            user.set_password(password)
             user.save()
-        except IntegrityError:
+            login(request, user)
+            return HttpResponseRedirect(reverse("index"))
+        else:
             return render(
                 request, "register.html", {"message": "Username already taken."}
             )
-        login(request, user)
-        return HttpResponseRedirect(reverse("index"))
     else:
         return render(request, "register.html")
-
-
-# @csrf_exempt
-# @login_required
-# def set_calories(request):
-#     if request.method != "POST":
-#         return JsonResponse({"error": "POST request required."}, status=400)
-
-#     data = json.loads(request.body)
-
-#     user = models.User.objects.get(username=request.user)
-#     new_calories = data.get("new_calories")
-#     user.per_day = new_calories
-#     user.save()
-#     return JsonResponse({"message": "Calories updated successfully..."}, status=201)
 
 
 class set_calories(APIView):

@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.conf import settings
 
 # Create your models here.
 
@@ -10,12 +11,19 @@ class User(AbstractUser):
 
     per_day = models.DecimalField(max_digits=16, decimal_places=2, default=0)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["username"], name="unique_username")
+        ]
+
 
 class Entry(models.Model):
     class Meta:
         verbose_name_plural = "Entries"
 
-    user = models.ForeignKey("User", on_delete=models.CASCADE, related_name="entries")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="entries"
+    )
     name = models.CharField(max_length=255)
     number = models.DecimalField(max_digits=16, decimal_places=2)
     timestamp = models.DateTimeField(auto_now_add=True)
