@@ -307,7 +307,7 @@ function renderUsers(data) {
     if (select.data("view") != "users") {
         select.data("view", "users")
         select.empty()
-        select.append($('<option>').text('Sort By...').attr("disabled"))
+        select.append($('<option>').text('Sort By...').val("").attr("disabled", '').attr("selected", ''))
         select.append($('<option>').text('Name: A-Z').val('username'))
         select.append($('<option>').text('Name: Z-A').val('-username'))
         select.append($('<option>').text('Newest').val('-id'))
