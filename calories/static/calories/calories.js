@@ -85,6 +85,20 @@ $(document).ready(function () {
         toggleForm('#form_edit_user');
     });
 
+    $('select').change(function () {
+        if ($(this).data("view") == "users") {
+            loadUsers($(this).val(), token, 1)
+        } else {
+            user_id = $(this).data("user_id");
+            if (user_id) {
+                loadEntries($(this).val(), token, 1, user_id)
+            } else {
+                loadEntries($(this).val(), token, 1)
+            }
+        }
+    })
+
+
     $('#div_entries').on('click', '.entries_icon', function () {
         const user_id = $(this).data("id");
         loadEntries('default', token, 1, user_id)
@@ -193,11 +207,20 @@ function deleteEntry(id, token) {
     });
 }
 
-function renderData(data) {
+function renderData(data, user_id) {
     const divEntries = $('#div_entries');
     const token = $('#auth_token').val();
     divEntries.empty();
-
+    const select = $('select')
+    if (select.data("view") != "entries") {
+        select.data("view", "entries").data("user_id", user_id)
+        select.empty()
+        select.append($('<option>').text('Sort By...').val("").attr("disabled", '').attr("selected", ''))
+        select.append($('<option>').text('Name: A-Z').val('name'))
+        select.append($('<option>').text('Name: Z-A').val('-name'))
+        select.append($('<option>').text('Calories: Largest First').val('-number'))
+        select.append($('<option>').text('Calories: Smallest First').val('number'))
+    }
     for (let i = 0; i < data.entries.length; i++) {
         const item = data.entries[i];
         const div = $('<div>').addClass('entry_item');
@@ -225,7 +248,6 @@ function renderData(data) {
 
     const pagination = data.pagination;
     const page_info = $('<ul>').addClass('pagination');
-
     if (pagination.has_previous) {
         const link = $('<a>')
             .addClass('page-link')
@@ -233,7 +255,7 @@ function renderData(data) {
             .append($('<i>').text('chevron_left').addClass('material-icons'));
 
         link.click(function () {
-            loadEntries('default', token, pagination.current_page - 1);
+            loadEntries(select.val(), token, pagination.current_page - 1);
         });
 
         const listItem = $('<li>').addClass('page-item').append(link);
@@ -245,14 +267,14 @@ function renderData(data) {
 
         if (page === pagination.current_page) {
             link = $('<a>').addClass('page-link').text(page).attr('href', '#').click(function () {
-                loadEntries('default', token, page);
+                loadEntries(select.val(), token, page);
             });
 
             const listItem = $('<li>').addClass('page-item active').append(link);
             page_info.append(listItem);
         } else {
             link = $('<a>').addClass('page-link').text(page).attr('href', '#').click(function () {
-                loadEntries('default', token, page);
+                loadEntries(select.val(), token, page);
             });
 
             const listItem = $('<li>').addClass('page-item').append(link);
@@ -267,7 +289,7 @@ function renderData(data) {
             .append($('<i>').text('chevron_right').addClass('material-icons'));
 
         nextLink.click(function () {
-            loadEntries('default', token, pagination.current_page + 1);
+            loadEntries(select.val(), token, pagination.current_page + 1);
         });
 
         const nextListItem = $('<li>').addClass('page-item').append(nextLink);
@@ -281,7 +303,16 @@ function renderUsers(data) {
     const divEntries = $('#div_entries');
     const token = $('#auth_token').val();
     divEntries.empty();
-
+    const select = $('select')
+    if (select.data("view") != "users") {
+        select.data("view", "users")
+        select.empty()
+        select.append($('<option>').text('Sort By...').attr("disabled"))
+        select.append($('<option>').text('Name: A-Z').val('username'))
+        select.append($('<option>').text('Name: Z-A').val('-username'))
+        select.append($('<option>').text('Newest').val('-id'))
+        select.append($('<option>').text('Oldest').val('id'))
+    }
     for (let i = 0; i < data.users.length; i++) {
         const user = data.users[i];
         const div = $('<div>').addClass('entry_item');
@@ -316,7 +347,7 @@ function renderUsers(data) {
             .append($('<i>').text('chevron_left').addClass('material-icons'));
 
         link.click(function () {
-            loadUsers('default', token, pagination.current_page - 1);
+            loadUsers(select.val(), token, pagination.current_page - 1);
         });
 
         const listItem = $('<li>').addClass('page-item').append(link);
@@ -328,14 +359,14 @@ function renderUsers(data) {
 
         if (page === pagination.current_page) {
             link = $('<a>').addClass('page-link').text(page).attr('href', '#').click(function () {
-                loadUsers('default', token, page);
+                loadUsers(select.val(), token, page);
             });
 
             const listItem = $('<li>').addClass('page-item active').append(link);
             page_info.append(listItem);
         } else {
             link = $('<a>').addClass('page-link').text(page).attr('href', '#').click(function () {
-                loadUsers('default', token, page);
+                loadUsers(select.val(), token, page);
             });
 
             const listItem = $('<li>').addClass('page-item').append(link);
@@ -350,7 +381,7 @@ function renderUsers(data) {
             .append($('<i>').text('chevron_right').addClass('material-icons'));
 
         nextLink.click(function () {
-            loadUsers('default', token, pagination.current_page + 1);
+            loadUsers(($('select').val()), token, pagination.current_page + 1);
         });
 
         const nextListItem = $('<li>').addClass('page-item').append(nextLink);
@@ -380,7 +411,7 @@ function loadEntries(sortBy, token, page, user_id) {
         },
         success: function (response) {
 
-            renderData(response);
+            renderData(response, user_id);
         },
         error: function (xhr, textStatus, errorThrown) {
             handleError(xhr, errorThrown)

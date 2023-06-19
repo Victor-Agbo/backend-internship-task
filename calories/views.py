@@ -15,6 +15,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.core.paginator import Paginator
 from rest_framework.permissions import IsAuthenticated, BasePermission
 from rest_framework.authtoken.models import Token
+from django.db.models.functions import Lower
 
 # Create your views here.
 
@@ -81,8 +82,8 @@ class edit_entry(APIView):
         data = json.loads(request.body)
         print(data)
 
-        if data.user_id != request.user.id and not request.user.has_perm(
-            "calories.edit_user"
+        if data.get("edit_entry_user") != request.user.id and not request.user.has_perm(
+            "calories.change_entry"
         ):
             return JsonResponse({"message": "Unauthorized..."}, status=400)
 
@@ -128,7 +129,7 @@ class load_entries(APIView):
 
     def get(self, request):
         sort_by = page_number = request.GET.get("sort_by")
-
+        print(sort_by)
         user_id = request.GET.get("user_id")
         print(user_id)
         if user_id:
@@ -139,9 +140,13 @@ class load_entries(APIView):
         else:
             entries = models.Entry.objects.filter(user=request.user)
 
+        if sort_by != "default":
+            entries = entries.order_by(sort_by).all()
+        else:
+            entries = entries.order_by("-timestamp").all()
         # Return emails in reverse chronologial order
         ret_entries = {}
-        entries = entries.order_by("-timestamp").all()
+
         paginator = Paginator(entries, 10)
 
         page_number = request.GET.get("page")
@@ -173,7 +178,13 @@ class load_users(APIView):
 
     def get(self, request):
         ret_users = {}
-        users = models.User.objects.all().order_by("id")
+        sort_by = request.GET.get("sort_by")
+        print(sort_by)
+        users = models.User.objects.all()
+        if sort_by != "default":
+            users = users.order_by(sort_by).all()
+        else:
+            users = users.order_by("-id").all()
         paginator = Paginator(users, 10)
 
         page_number = request.GET.get("page")
@@ -232,14 +243,7 @@ def logout_view(request):
 
 def register_view(request):
     if request.method == "POST":
-        pass
-    else:
-        return render(request, "register.html")
-
-
-def register_view(request):
-    if request.method == "POST":
-        username = request.POST["username"]
+        username = request.POST["username"].title()
         email = request.POST["email"]
 
         # Ensure password matches confirmation
