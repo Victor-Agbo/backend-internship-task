@@ -85,6 +85,11 @@ $(document).ready(function () {
         toggleForm('#form_edit_user');
     });
 
+    $('#div_entries').on('click', '.entries_icon', function () {
+        const user_id = $(this).data("id");
+        loadEntries('default', token, 1, user_id)
+    });
+
     $('#div_entries').on('click', '.remove_icon', function () {
         const entryId = $(this).attr('data-id');
         deleteEntry(entryId, token);
@@ -203,6 +208,7 @@ function renderData(data) {
         const editIcon = $('<i>')
             .text('edit')
             .addClass('material-icons black-text right edit_icon').data("id", item.id).data("user_id", item.user_id);
+
         const removeIcon = $('<i>')
             .text('delete_sweep')
             .addClass('material-icons black-text remove_icon')
@@ -291,7 +297,11 @@ function renderUsers(data) {
             .addClass('material-icons black-text remove_user_icon')
             .attr('data-id', user.id);
 
-        iconsDiv.append(editIcon, removeUser);
+        const entriesIcon = $('<i>')
+            .text('library_books')
+            .addClass('material-icons black-text entries_icon')
+            .attr('data-id', user.id);
+        iconsDiv.append(editIcon, removeUser, entriesIcon);
         div.append(title, cal, email, iconsDiv);
         divEntries.append(div);
     }
@@ -350,22 +360,30 @@ function renderUsers(data) {
     $('#div_entries').append(page_info);
 }
 
-function loadEntries(sortBy, token, page) {
+function loadEntries(sortBy, token, page, user_id) {
+    data = {
+        sort_by: sortBy,
+        page: page,
+    }
+    if (user_id) {
+        data.user_id = user_id;
+    }
+
     $.ajax({
         url: '/load_entries',
         type: 'GET',
-        data: {
-            sort_by: sortBy,
-            page: page
-        },
+        data: data,
+
         contentType: 'application/json',
         beforeSend: function (xhr) {
             xhr.setRequestHeader('Authorization', 'Token ' + token);
         },
         success: function (response) {
+
             renderData(response);
         },
         error: function (xhr, textStatus, errorThrown) {
+            handleError(xhr, errorThrown)
             console.log(errorThrown);
         }
     });

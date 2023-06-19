@@ -29,7 +29,6 @@ class add_entry(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
-
     def post(self, request):
         data = json.loads(request.body)
         user = models.User.objects.get(username=request.user)
@@ -82,7 +81,9 @@ class edit_entry(APIView):
         data = json.loads(request.body)
         print(data)
 
-        if data.user_id != request.user.id and not request.user.has_perm("calories.edit_user"):
+        if data.user_id != request.user.id and not request.user.has_perm(
+            "calories.edit_user"
+        ):
             return JsonResponse({"message": "Unauthorized..."}, status=400)
 
         user = models.User.objects.get(username=request.user)
@@ -128,7 +129,14 @@ class load_entries(APIView):
     def get(self, request):
         sort_by = page_number = request.GET.get("sort_by")
 
-        if sort_by == "default":
+        user_id = request.GET.get("user_id")
+        print(user_id)
+        if user_id:
+            if not request.user.has_perm("calories.add_entry"):
+                return JsonResponse({"message": "Unauthorized..."}, status=400)
+
+            entries = models.Entry.objects.filter(user=int(user_id))
+        else:
             entries = models.Entry.objects.filter(user=request.user)
 
         # Return emails in reverse chronologial order
