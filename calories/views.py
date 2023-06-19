@@ -1,8 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
-
-# from django.db import IntegrityError, transaction
 from django.http import HttpResponseRedirect, JsonResponse
 from django.urls import reverse
 from . import models
@@ -22,7 +20,6 @@ from django.db.models.functions import Lower
 
 class CanAddUserPermission(BasePermission):
     def has_permission(self, request, view):
-        # Check if the user has the 'can_add_user' permission on the model
         return request.user.has_perm("calories.add_user")
 
 
@@ -44,7 +41,6 @@ class add_entry(APIView):
         )
 
         new_entry.save()
-        print(new_entry.serialize())
         resp = {"message": "Entry added successfully..."}
         return Response(resp)
 
@@ -55,7 +51,6 @@ class delete_entry(APIView):
 
     def delete(self, request):
         entry_id = request.data.get("entry_id")
-        print(entry_id)
         to_delete = models.Entry.objects.get(id=entry_id)
         if entry_id and to_delete:
             to_delete.delete()
@@ -68,7 +63,6 @@ class delete_user(APIView):
 
     def delete(self, request):
         user_id = request.data.get("user_id")
-        print(user_id)
         to_delete = models.User.objects.get(id=user_id)
         to_delete.delete()
         return Response({"message": "Delete successful"}, status=204)
@@ -80,7 +74,6 @@ class edit_entry(APIView):
 
     def post(self, request):
         data = json.loads(request.body)
-        print(data)
 
         if data.get("edit_entry_user") != request.user.id and not request.user.has_perm(
             "calories.change_entry"
@@ -109,7 +102,6 @@ class edit_user(APIView):
 
     def post(self, request):
         data = json.loads(request.body)
-        print(data)
         user = models.User.objects.get(username=request.user)
 
         to_edit = models.User.objects.get(id=float(data.get("user_id")))
@@ -129,9 +121,7 @@ class load_entries(APIView):
 
     def get(self, request):
         sort_by = page_number = request.GET.get("sort_by")
-        print(sort_by)
         user_id = request.GET.get("user_id")
-        print(user_id)
         if user_id:
             if not request.user.has_perm("calories.add_entry"):
                 return JsonResponse({"message": "Unauthorized..."}, status=400)
@@ -144,7 +134,6 @@ class load_entries(APIView):
             entries = entries.order_by(sort_by).all()
         else:
             entries = entries.order_by("-timestamp").all()
-        # Return emails in reverse chronologial order
         ret_entries = {}
 
         paginator = Paginator(entries, 10)
@@ -179,7 +168,6 @@ class load_users(APIView):
     def get(self, request):
         ret_users = {}
         sort_by = request.GET.get("sort_by")
-        print(sort_by)
         users = models.User.objects.all()
         if sort_by != "default":
             users = users.order_by(sort_by).all()
@@ -212,7 +200,6 @@ class load_users(APIView):
 
 @login_required
 def index(request):
-    print(request.user.id)
     return render(request, "index.html")
 
 
@@ -222,7 +209,6 @@ def login_view(request):
         password = request.POST.get("password", "")
 
         user = authenticate(request, username=username, password=password)
-        # Check if authentication successful
         if user is not None:
             login(request, user)
             return HttpResponseRedirect(reverse("index"))
@@ -246,15 +232,12 @@ def register_view(request):
         username = request.POST["username"].title()
         email = request.POST["email"]
 
-        # Ensure password matches confirmation
         password = request.POST["password"]
         confirmation = request.POST["confirmation"]
         if password != confirmation:
             return render(
                 request, "register.html", {"message": "Passwords must match."}
             )
-
-        # Attempt to create new user
 
         user, created = models.User.objects.get_or_create(
             username=username, email=email
@@ -278,7 +261,6 @@ class set_calories(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        # Handle POST request
         data = json.loads(request.body)
         user = models.User.objects.get(username=request.user)
         new_calories = data.get("new_calories")
