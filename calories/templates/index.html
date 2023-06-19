@@ -39,6 +39,7 @@
             {% csrf_token %}
 
             <input type="hidden" id="edit_id" name="edit_id" required>
+            <input type="hidden" id="user_id" name="user_id" required>
             <input type="text" id="edit_meal_name" name="edit_meal_name" placeholder="Meal name" required>
             <input type="number" id="edit_cal_num" name="edit_cal_num" placeholder="Calories">
             <button class="btn deep-purple accent-3" type="" id="edit_entry">Edit!</button>

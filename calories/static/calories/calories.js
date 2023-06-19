@@ -31,10 +31,22 @@ $(document).ready(function () {
     $('#edit_entry').click(function () {
         const data = {
             edit_id: $('#edit_id').val(),
+            edit_entry_user: $('#edit_entry_user'),
             edit_meal_name: $('#edit_meal_name').val(),
             edit_cal_num: $('#edit_cal_num').val()
         };
         sendAjaxRequest('/edit_entry', 'POST', data, token);
+        hideForms();
+        return false;
+    });
+
+    $('#edit_user').click(function () {
+        const data = {
+            user_id: $('#edit_user_id').val(),
+            user_email: $('#edit_email').val(),
+            user_per_day: $('#edit_per_day').val()
+        };
+        sendAjaxRequest('/edit_user', 'POST', data, token);
         hideForms();
         return false;
     });
@@ -53,9 +65,11 @@ $(document).ready(function () {
 
     $('#div_entries').on('click', '.edit_icon', function () {
         const item_id = $(this).data("id");
+        const item_user = $(this).data("user_id");
         const meal_name = $(this).parent().siblings('h4').text();
         const cal_num = $(this).parent().siblings('b').text().replace(' cal', '');
         $('#edit_id').val(item_id);
+        $('#user_id').val(item_user);
         $('#edit_meal_name').val(meal_name);
         $('#edit_cal_num').val(cal_num);
         toggleForm('#form_edit_entry');
@@ -75,10 +89,10 @@ $(document).ready(function () {
         const entryId = $(this).attr('data-id');
         deleteEntry(entryId, token);
     });
-    
+
     $('#div_entries').on('click', '.remove_user_icon', function () {
         const userId = $(this).attr('data-id');
-        deleteEntry(userId, token);
+        deleteUser(userId, token);
     });
 });
 
@@ -132,20 +146,20 @@ function handleError(xhr, errorThrown) {
     $('#message_div').fadeIn(1000).fadeOut(2000);
 }
 
-function deleteEntry(id, token) {
+function deleteUser(id, token) {
     console.log(id);
     $.ajax({
-        url: `/delete_entry`,
+        url: `/delete_user`,
         type: 'DELETE',
         dataType: 'json',
         data: {
-            "entry_id": id
+            "user_id": id
         },
         beforeSend: function (xhr) {
             xhr.setRequestHeader('Authorization', 'Token ' + token);
         },
         success: function (data) {
-            loadEntries('default', token, $('li.active').find('a').text());
+            loadUsers('default', token, $('li.active').find('a').text());
         },
         error: function (xhr, textStatus, errorThrown) {
             console.log(errorThrown);
@@ -188,7 +202,7 @@ function renderData(data) {
         const iconsDiv = $('<div>').css({ flex: '1', position: 'relative' });
         const editIcon = $('<i>')
             .text('edit')
-            .addClass('material-icons black-text right edit_icon').data("id", item.id);
+            .addClass('material-icons black-text right edit_icon').data("id", item.id).data("user_id", item.user_id);
         const removeIcon = $('<i>')
             .text('delete_sweep')
             .addClass('material-icons black-text remove_icon')
@@ -272,16 +286,12 @@ function renderUsers(data) {
         const editIcon = $('<i>')
             .text('edit')
             .addClass('material-icons black-text right edit_user_icon').data("id", user.id);
-        const removeIcon = $('<i>')
+        const removeUser = $('<i>')
             .text('delete_sweep')
             .addClass('material-icons black-text remove_user_icon')
             .attr('data-id', user.id);
 
-        removeIcon.click(function () {
-            deleteUser($(this).attr('data-id'), token);
-        });
-
-        iconsDiv.append(editIcon, removeIcon);
+        iconsDiv.append(editIcon, removeUser);
         div.append(title, cal, email, iconsDiv);
         divEntries.append(div);
     }
@@ -366,8 +376,8 @@ function loadUsers(sortBy, token, page) {
         url: '/load_users',
         type: 'GET',
         data: {
-            sort_by: sortBy,
-            page: page
+            "sort_by": sortBy,
+            "page": page
         },
         contentType: 'application/json',
         beforeSend: function (xhr) {

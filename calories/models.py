@@ -40,6 +40,7 @@ class Entry(models.Model):
     def serialize(self):
         return {
             "id": self.id,
+            "user_id": self.user.id,
             "name": self.name,
             "number": self.number,
             "timestamp": self.timestamp.strftime("%b %d %Y, %I:%M %p"),

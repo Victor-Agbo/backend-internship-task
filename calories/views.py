@@ -14,17 +14,24 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from django.core.paginator import Paginator
 from rest_framework.permissions import IsAuthenticated, BasePermission
+from rest_framework.authtoken.models import Token
 
 # Create your views here.
+
+
+class CanAddUserPermission(BasePermission):
+    def has_permission(self, request, view):
+        # Check if the user has the 'can_add_user' permission on the model
+        return request.user.has_perm("calories.add_user")
 
 
 class add_entry(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
+
     def post(self, request):
         data = json.loads(request.body)
-        print(data)
         user = models.User.objects.get(username=request.user)
         if not data.get("add_meal_name"):
             return JsonResponse({"message": "Empty entry not allowed..."}, status=400)
@@ -55,6 +62,18 @@ class delete_entry(APIView):
             return Response({"message": "Delete successful"}, status=204)
 
 
+class delete_user(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, CanAddUserPermission]
+
+    def delete(self, request):
+        user_id = request.data.get("user_id")
+        print(user_id)
+        to_delete = models.User.objects.get(id=user_id)
+        to_delete.delete()
+        return Response({"message": "Delete successful"}, status=204)
+
+
 class edit_entry(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
@@ -62,6 +81,10 @@ class edit_entry(APIView):
     def post(self, request):
         data = json.loads(request.body)
         print(data)
+
+        if data.user_id != request.user.id and not request.user.has_perm("calories.edit_user"):
+            return JsonResponse({"message": "Unauthorized..."}, status=400)
+
         user = models.User.objects.get(username=request.user)
         if not data.get("edit_meal_name"):
             return JsonResponse({"message": "Empty entry not allowed..."}, status=400)
@@ -75,6 +98,26 @@ class edit_entry(APIView):
         to_edit.save()
 
         resp = {"message": "Entry edited successfully..."}
+        return Response(resp)
+
+
+class edit_user(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, CanAddUserPermission]
+
+    def post(self, request):
+        data = json.loads(request.body)
+        print(data)
+        user = models.User.objects.get(username=request.user)
+
+        to_edit = models.User.objects.get(id=float(data.get("user_id")))
+
+        to_edit.email = data.get("user_email")
+        to_edit.per_day = data.get("user_per_day")
+
+        to_edit.save()
+
+        resp = {"message": "User edited successfully..."}
         return Response(resp)
 
 
@@ -116,22 +159,13 @@ class load_entries(APIView):
         return JsonResponse(ret_entries, safe=False, status=200)
 
 
-class CanAddUserPermission(BasePermission):
-    def has_permission(self, request, view):
-        # Check if the user has the 'can_add_user' permission on the model
-        return request.user.has_perm("calories.add_user")
-
-
 class load_users(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, CanAddUserPermission]
 
     def get(self, request):
-        sort_by = page_number = request.GET.get("sort_by")
-
-        # Return emails in reverse chronologial order
         ret_users = {}
-        users = models.User.objects.all()
+        users = models.User.objects.all().order_by("id")
         paginator = Paginator(users, 10)
 
         page_number = request.GET.get("page")
@@ -159,7 +193,7 @@ class load_users(APIView):
 
 @login_required
 def index(request):
-    print(request.user.groups.all())
+    print(request.user.id)
     return render(request, "index.html")
 
 
@@ -216,6 +250,7 @@ def register_view(request):
         if created:
             user.set_password(password)
             user.save()
+            Token.objects.get_or_create(user=user)
             login(request, user)
             return HttpResponseRedirect(reverse("index"))
         else:
@@ -233,8 +268,6 @@ class set_calories(APIView):
     def post(self, request):
         # Handle POST request
         data = json.loads(request.body)
-        print(data)
-
         user = models.User.objects.get(username=request.user)
         new_calories = data.get("new_calories")
         user.per_day = new_calories

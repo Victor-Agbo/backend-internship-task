@@ -35,11 +35,12 @@
                         <li><a href="{% url 'login' %}">Login</a></li>
 
                         {% endif %}
-                        {% if perms.calories.add_user %}
+                        {% if perms.calories.add_user and perms.calories.add_entry %}
                         <li id="crud_users_li"><a class="indigo-text darken-4" href="#!">CRUD Users</a></li>
-                        {% else %}
-                        <li id="set_calories_li"><a class="indigo-text darken-4" href="#!">Set Calories</a></li>
-
+                        <li id="crud_user_entries_li"><a class="indigo-text darken-4" href="#!">CRUD User Entries</a>
+                        </li>
+                        {% elif perms.calories.add_user %}
+                        <li id="crud_users_li"><a class="indigo-text darken-4" href="#!">CRUD Users</a></li>
                         {% endif %}
                     </ul>
                 </ul>
